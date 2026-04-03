@@ -62,10 +62,13 @@ Google({
       return true;
     },
     async jwt({token,user}){
+      if(user){
         token.id = user.id;
         token.name = user.name;
         token.email = user.email;
         token.role = user.role;
+      }
+        
         return token;
     },
     async session({session,token}){

@@ -1,19 +1,25 @@
 import connectDb from "@/lib/db";
+import { sendMail } from "@/lib/sendMail";
 import User from "@/models/user-model";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import { use } from "react";
 
 export async function POST(req:NextRequest){
     try{
         const {name,email,password} = await req.json();
         await connectDb();
         let user = await User.findOne({email});
-        if(user){
+        if(user && user.isEmailVerified){
             return NextResponse.json(
                 {message : "User already exists"},
                 {status : 400}
             );
         }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
         if(password.length<6){
             return NextResponse.json(
                 {message : "Password must be at least 6 characters long"},
@@ -22,11 +28,31 @@ export async function POST(req:NextRequest){
         }
         const HashedPassword = await bcrypt.hash(password, 10);
         
-        user = await User.create({
-            name,
+        if(user && !user.isEmailVerified){
+            user.name = name,
+            user.password = HashedPassword,
+            user.email = email,
+            user.otp = otp,
+            user.otpExpiresAt = otpExpiresAt
+            await user.save();
+        }
+        else{
+            user = await User.create({
+                name,
+                email,
+                password : HashedPassword,
+                otp,
+                otpExpiresAt
+            });
+        }
+
+        await sendMail(
             email,
-            password : HashedPassword
-        });
+            "Your OTP for RYDEX Registration",
+            `<h2>Your OTP for RYDEX registration is <b>${otp}</b>. It is valid for 10 minutes.</h2>`
+        );    
+
+        
         return NextResponse.json(
             user,
             {status:201}
