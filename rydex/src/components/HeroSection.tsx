@@ -2,10 +2,14 @@
 import { Bike, Bus, Car, Truck } from "lucide-react";
 import { motion } from "framer-motion";
 import React from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
+import { useRouter } from "next/navigation";
 
 const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => { 
-
-  return (
+const {userdata} = useSelector((state:RootState) => state.user)
+const router = useRouter();
+return (
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
       
       {/* Background Image */}
@@ -60,7 +64,7 @@ const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           className="cursor-pointer mt-12 px-10 py-4 bg-white text-black rounded-full font-semibold shadow-xl"
-        onClick={onAuthRequired} >
+        onClick={()=> {!userdata? onAuthRequired() : router.push("/user/book")}} >
           Book Now
         </motion.button>
       </div>
