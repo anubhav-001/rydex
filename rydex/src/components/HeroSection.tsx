@@ -1,7 +1,6 @@
 "use client";
 import { Bike, Bus, Car, Truck } from "lucide-react";
 import { motion } from "framer-motion";
-import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
@@ -9,7 +8,9 @@ import { useRouter } from "next/navigation";
 const HeroSection = ({ onAuthRequired }: { onAuthRequired: () => void }) => { 
 const {userdata} = useSelector((state:RootState) => state.user)
 const router = useRouter();
+
 return (
+    
     <div className="relative min-h-screen w-full overflow-hidden flex items-center justify-center">
       
       {/* Background Image */}

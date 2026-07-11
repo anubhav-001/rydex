@@ -34,6 +34,16 @@ function page() {
   const [dropCountry, setDropCountry] = useState("");
   const [dropLat, setDropLat] = useState<Number>();
   const [dropLon, setDropLon] = useState<Number>();
+  const canContinue = !!(
+    vehicle &&
+    mobile &&
+    pickUp &&
+    drop &&
+    pickUpLat &&
+    pickUpLon &&
+    dropLat &&
+    dropLon
+  );
 
   const progress = [
     !!vehicle,
@@ -76,9 +86,14 @@ function page() {
         setResults([]);
         return;
       }
-      const { data } = await axios.get(
-        `https://komoot.io{encodeURIComponent(q.trim())}&limit=8&lang=en`,
-      );
+      const { data } = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete", {
+        params: {
+          text: q.trim(),
+          apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+          filter: "countrycode:in",
+          limit: 5
+        }
+      });
       console.log(data);
       let results: Place[] = (data.features ?? []).map((f: any) => ({
         id: String(f.properties.osm_id),
@@ -109,9 +124,15 @@ function page() {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(async ({ coords }) => {
       try {
-        const { data } = await axios.get(
-          `https://komoot.io{coords.longitude}&lat=${coords.latitude}`,
-        );
+        const { data } = await axios.get("https://api.geoapify.com/v1/geocode/reverse", {
+          params: {
+            lat: coords.latitude,
+            lon: coords.longitude,
+            apiKey: process.env.NEXT_PUBLIC_GEOAPIFY_API_KEY,
+            filter: "countrycode:in",
+          },
+        });
+
         if (data.features.length) {
           const p = data.features[0].properties;
           const address = [p.name, p.street, p.city, p.state, p.country]
@@ -171,7 +192,7 @@ function page() {
         </div>
 
         <div className="bg-white rounded-3xl border border-zinc-200 shadow-[0_8px_40px_rgba(0,0,08)] overflow-visible">
-          <div className="h-1 bg-zinc-900 w-full" />
+          <div className="h-1 bg-zinc-900 w-[80%] m-auto" />
           <div className="p-6 space-y-7">
             <motion.div
               variants={stepVariants}
@@ -457,6 +478,27 @@ function page() {
                   </AnimatePresence>
                 </div>
               </div>
+            </motion.div>
+
+            <motion.div
+              variants={stepVariants}
+              initial="hidden"
+              animate="visible"
+              transition={{ delay: 0.3 }}
+            >
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={canContinue ? { scale: 1.02 } : {}}
+                disabled={!canContinue}
+                onClick={() => {
+                  router.push(
+                    `/user/search?pickup=${encodeURIComponent(pickUp)}&drop=${encodeURIComponent(drop)}&vehicle=${vehicle}&mobile=${encodeURIComponent(mobile)}&pickuplat=${pickUpLat}&pickuplon=${pickUpLon}&droplat=${dropLat}&droplon=${dropLon}`,
+                  );
+                }}
+                className="w-full h-14 rounded-2xl bg-zinc-900 hover:bg-black disabled:opacity-35 text-white font-black text-sm tracking-wide flex items-center justify-center gap-2.5 transition-colors shadow-lg disabled:shadow-none"
+              >
+                <span>Continue</span>
+              </motion.button>
             </motion.div>
           </div>
         </div>
